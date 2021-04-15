@@ -53,4 +53,13 @@
         app:layout_constraintTop_toBottomOf="@+id/gatt_services_characteristics"
         app:layout_constraintVertical_bias="0.133" />
 
+    <Button
+        android:id="@+id/EnableNotify"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="EnableNotify"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/comandButton" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

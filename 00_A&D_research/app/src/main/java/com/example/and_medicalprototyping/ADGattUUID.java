@@ -17,6 +17,8 @@ public class ADGattUUID {
     public static final UUID AndCustomService = UUID.fromString("233BF000-5A34-1B6D-975C-000D5690ABE4");
     public static final UUID AndCustomCharacteristic = UUID.fromString("233BF001-5A34-1B6D-975C-000D5690ABE4");
 
+
+
     /*
      * Services
      */

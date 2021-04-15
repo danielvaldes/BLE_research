@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/AND_MedicalPrototyping.iml" filepath="$PROJECT_DIR$/.idea/modules/AND_MedicalPrototyping.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/AND_MedicalPrototyping.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/AND_MedicalPrototyping.app.iml" />
+    </modules>
+  </component>
+</project>
