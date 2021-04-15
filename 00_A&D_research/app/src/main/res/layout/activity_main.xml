@@ -16,12 +16,12 @@
         app:layout_constraintTop_toBottomOf="@+id/scan" />
 
     <TextView
-        android:id="@+id/gatt_services_characteristics"
-        android:layout_width="95dp"
-        android:layout_height="64dp"
-        android:text="TextView"
+        android:id="@+id/weightStats"
+        android:layout_width="228dp"
+        android:layout_height="231dp"
+        android:text="weightStats"
+        app:layout_constraintBottom_toTopOf="@+id/clear"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pair" />
 
     <Button
@@ -46,20 +46,23 @@
         android:layout_width="148dp"
         android:layout_height="118dp"
         android:text="command"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/gatt_services_characteristics"
-        app:layout_constraintVertical_bias="0.133" />
+        app:layout_constraintTop_toBottomOf="@+id/pair" />
 
     <Button
         android:id="@+id/EnableNotify"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="EnableNotify"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/comandButton" />
+
+    <Button
+        android:id="@+id/DisplayWeights"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DisplayWeights"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/EnableNotify" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

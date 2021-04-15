@@ -17,7 +17,13 @@ public class ADGattUUID {
     public static final UUID AndCustomService = UUID.fromString("233BF000-5A34-1B6D-975C-000D5690ABE4");
     public static final UUID AndCustomCharacteristic = UUID.fromString("233BF001-5A34-1B6D-975C-000D5690ABE4");
 
+    /*
+    monosaicol version
+     */
 
+    public static final UUID myWeightScaleService = UUID.fromString("23434100-1fe4-1eff-80cb-00ff78297d8b");
+    public static final UUID myWeightScaleCharacteristic = UUID.fromString("23434101-1fe4-1eff-80cb-00ff78297d8b");
+    public static final UUID myWeightScaleDescriptor = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     /*
      * Services

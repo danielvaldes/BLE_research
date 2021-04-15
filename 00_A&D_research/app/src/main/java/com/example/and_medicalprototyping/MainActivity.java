@@ -23,17 +23,23 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ;
 import static com.example.and_medicalprototyping.ADGattUUID.AndCustomCharacteristic;
 import static com.example.and_medicalprototyping.ADGattUUID.AndCustomWeightScaleMeasurement;
 import static com.example.and_medicalprototyping.ADGattUUID.AndCustomWeightScaleService;
 import static com.example.and_medicalprototyping.ADGattUUID.WeightScaleMeasurement;
+import static com.example.and_medicalprototyping.ADGattUUID.myWeightScaleCharacteristic;
+import static com.example.and_medicalprototyping.ADGattUUID.myWeightScaleDescriptor;
+import static com.example.and_medicalprototyping.ADGattUUID.myWeightScaleService;
 
 
 public class MainActivity extends AppCompatActivity  {
@@ -59,7 +65,8 @@ public class MainActivity extends AppCompatActivity  {
     private int ReadQueueIndex = 0;
     private List<BluetoothGattCharacteristic> ReadQueue;
 
-
+    TextView textViewWeight;
+    ArrayList<Double> WeightValuesList = new ArrayList<Double>();
     ///
 
     @Override
@@ -73,6 +80,8 @@ public class MainActivity extends AppCompatActivity  {
         Button clearButton = (Button) findViewById(R.id.clear);
         Button comandButton = (Button) findViewById(R.id.comandButton);
         Button EnableNotifyButton = (Button) findViewById(R.id.EnableNotify);
+        Button DisplayWeights = (Button) findViewById(R.id.DisplayWeights);
+        textViewWeight = (TextView) findViewById(R.id.weightStats);
 
         scanButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -194,12 +203,19 @@ public class MainActivity extends AppCompatActivity  {
 
                 //// I need to create a command queue,
                 // Send 1 command wait for response, send next command (this is how BLE works)
-                command2();
+                enableNotify();
 
             }
         });
 
+        DisplayWeights.setOnClickListener(new View.OnClickListener() {
 
+            public void onClick(View v) {
+                Log.d("monosaicol","User has clicked on the DisplayWeights button  ");
+
+              displayWeights();
+            }
+        });
 
     }
 
@@ -282,15 +298,96 @@ public class MainActivity extends AppCompatActivity  {
         }
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            Log.d("monosaicol", "onCharacteristicChanged()");
+            Log.d("monosaicol", "onCharacteristicChanged()  " + characteristic.getUuid() +  "  " +characteristic.getValue());
+
+            //WeightValuesList.clear();
+            textViewWeight.setText("");
+            final byte[] dataInput = characteristic.getValue();
+
+            if(dataInput != null && dataInput.length >0)
+            {
+                StringBuilder stringBuilder = null;
+                stringBuilder = new StringBuilder(dataInput.length);
+                for(byte byteChar : dataInput)
+                    stringBuilder.append(String.format("%02X ", byteChar));
+
+
+                Log.d("monosaicol", "DataInput:: properties: " + characteristic.getProperties() + " characteistic length  " + characteristic.getValue().length + "       : " + String.valueOf(stringBuilder));
+                stringBuilder = null;
+            }
+
+
+
+            Log.d("monosaicol","reading for WS received");
+            int flag = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+            String flagString = Integer.toBinaryString(flag);
+            int offset=0;
+            for(int index = flagString.length(); 0 < index ; index--) {
+                String key = flagString.substring(index-1 , index);
+                if(index == flagString.length()) {
+                    double convertValue = 0;
+                    if(key.equals("0")) {
+                        convertValue = 0.1f;
+                    }
+                    else {
+                        convertValue = 0.1f;
+                    }
+                    // Unit
+                    offset+=1;
+
+                    // Value
+                    double value = (double)(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset)) * convertValue;
+                    Log.d("monosaicol", "Weight Value :"+value + "  ");
+                    offset+=2;
+                    //Add value to a list, and display on Screen View List
+                    WeightValuesList.add(value);
+                }
+                else if(index == flagString.length()-1) {
+                    if(key.equals("1")) {
+                        Log.d("monosaicol", "Y :"+String.format("%04d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, offset)));
+                        offset+=2;
+                        Log.d("monosaicol", "M :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+                        Log.d("monosaicol", "D :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+                        Log.d("monosaicol", "H :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+                        Log.d("monosaicol", "M :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+                        Log.d("monosaicol", "S :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+
+                    }
+                    else {
+                        //Implies put the calendar date as the one
+                        Calendar calendar = Calendar.getInstance(Locale.getDefault());
+
+                    }
+                }
+                else if(index == flagString.length()-2) {
+                    if(key.equals("1")) {
+                        Log.d("monosaicol", "ID :"+String.format("%02d", characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, offset)));
+                        offset+=1;
+                    }
+                }
+                else if(index == flagString.length()-3) {
+                    if(key.equals("1")) {
+                        // BMI and Height
+                    }
+                }
+            }
+            displayWeights();
+
+
+
         }
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            Log.d("monsaicol", "onDescriptorRead()" );
+            Log.d("monsaicol", "onDescriptorRead() "  + status);
         }
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            Log.d("monosaicol", "onDescriptorWrite()" );
+            Log.d("monosaicol", "onDescriptorWrite() "  + status);
         }
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {     BluetoothDevice device = gatt.getDevice();
@@ -316,6 +413,7 @@ public class MainActivity extends AppCompatActivity  {
         if (mBluetoothGatt != null) {
             mBluetoothGatt.readRemoteRssi();
             for (BluetoothGattService service :  mBluetoothGatt.getServices()) {
+
                 Log.d("monosaicol", "Service:   " + service.getUuid());
                 if (service != null) {
 
@@ -326,17 +424,34 @@ public class MainActivity extends AppCompatActivity  {
 
                         if(characteristic.getDescriptors().size() > 0)
                         {
-                            Log.d("monosaicol", "Descriptor:   "  + characteristic.getDescriptors().toString());
+
+                            for(BluetoothGattDescriptor descriptor : characteristic.getDescriptors())
+                            {
+                                Log.d("monosaicol","Descriptor: " + descriptor.getUuid().toString());
+                                if(service.getUuid().equals(myWeightScaleService))//23434100-1fe4-1eff-80cb-00ff78297d8b
+                                {
+                                    Log.d("monosaicol","oooooooooooooooooooooooooooooooooooo1");
+                                    if(characteristic.getUuid().equals(myWeightScaleCharacteristic))
+                                    {
+                                        Log.d("monosaicol","oooooooooooooooooooooooooooooooooooo2");
+                                        if(descriptor.getUuid().equals((myWeightScaleDescriptor)))
+                                        {
+                                            Log.d("monosaicol","oooooooooooooooooooooooooooooooooooo3");
+                                        }
+                                    }
+                                }
+
+
+                            }
+
                         }
-                        if (characteristic.getUuid().equals(AndCustomWeightScaleMeasurement)) {
-
-                            final byte[] dataInput = characteristic.getValue();
-                            Log.d("monosaicol", "------------------------------------------AndCustomWeightScaleMeasurement = " + AndCustomWeightScaleMeasurement);
-                            characteristic2 = characteristic;
 
 
-                        }
-                        //
+                       // if (characteristic.getUuid() == AndCustomWeightScaleMeasurement) {
+                        //  1  Log.d("monosaicol","oooooooooooooooooooooooooooooooooooo");
+                      //  }
+
+
                         ////////////////////////////////////////////
                       /*  if (mBluetoothGatt.readCharacteristic(characteristic)) {
                             Log.e("monosaicol", "Initialized reading Characteristic  for : " + characteristic.getUuid());
@@ -374,12 +489,25 @@ public class MainActivity extends AppCompatActivity  {
         Log.d("monosaicol", "total of charcterasdas:  " + ReadQueue.size());
         ReadCharacteristics(ReadQueueIndex);
     }
-    private void command2()
+    private void enableNotify()
     {
-
-         mBluetoothGatt.setCharacteristicNotification(characteristic2, true);
-
+       if(mBluetoothGatt.getService(myWeightScaleService).getCharacteristic(myWeightScaleCharacteristic).getDescriptor(myWeightScaleDescriptor).setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE )) {
+           mBluetoothGatt.writeDescriptor(mBluetoothGatt.getService(myWeightScaleService).getCharacteristic(myWeightScaleCharacteristic).getDescriptor(myWeightScaleDescriptor));
+           mBluetoothGatt.setCharacteristicNotification(mBluetoothGatt.getService(myWeightScaleService).getCharacteristic(myWeightScaleCharacteristic), true);
+           Log.d("monosaicol","we have gone through the charactreristics and services and descritppasdo");
+       }
     }
+    private void displayWeights()
+    {
+        for (int i = WeightValuesList.size()-1; i >= 0; i--) {
+            //System.out.println(list.get(i));
+
+            Log.d("monosaicol", String.valueOf(WeightValuesList.get(i)));
+            // textViewWeight.setText( String.valueOf(WeightValuesList.get(i)));
+            textViewWeight.setText((textViewWeight.getText() != null ? textViewWeight.getText() : "") +  (String.valueOf(WeightValuesList.get(i))+"\n"));
+        }
+    }
+
 
     private void ReadCharacteristics(int index){
 
@@ -391,7 +519,7 @@ public class MainActivity extends AppCompatActivity  {
         else
         {
             Log.d("monosaicol", "seems like we cant read the following: " + ReadQueue.get(index).getUuid());
-            if(ReadQueue.get(index).getUuid().equals(AndCustomWeightScaleMeasurement))
+           /* if(ReadQueue.get(index).getUuid().equals(AndCustomWeightScaleMeasurement))
             {
                 mBluetoothGatt.setCharacteristicNotification(characteristic2, true);
                 Log.d("monosaicol","si");
@@ -399,7 +527,7 @@ public class MainActivity extends AppCompatActivity  {
                 //mBluetoothGatt.getService(ReadQueue.get(index).getService().getUuid()).getCharacteristic(AndCustomWeightScaleMeasurement);
               //  mBluetoothGatt.setCharacteristicNotification(mBluetoothGatt.getService(ReadQueue.get(index).getService().getUuid()).getCharacteristic(AndCustomWeightScaleMeasurement),true);
                 Log.d("monosaicol","si");
-            }
+            }*/
             if(ReadQueueIndex > 0) {
                 ReadQueueIndex--;
                 ReadCharacteristics(ReadQueueIndex);
