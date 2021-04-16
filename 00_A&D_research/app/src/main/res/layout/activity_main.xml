@@ -8,18 +8,33 @@
 
     <TextView
         android:id="@+id/weightStats"
-        android:layout_width="408dp"
-        android:layout_height="485dp"
-        android:text="weightStats"
+        android:layout_width="398dp"
+        android:layout_height="531dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/bleDeviceInfo" />
 
     <Button
         android:id="@+id/clear"
-        android:layout_width="159dp"
-        android:layout_height="83dp"
+        android:layout_width="195dp"
+        android:layout_height="88dp"
         android:text="Clear"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/bleDeviceInfo"
+        android:layout_width="226dp"
+        android:layout_height="67dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/ScanButton"
+        android:layout_width="215dp"
+        android:layout_height="88dp"
+        android:text="Scan"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
