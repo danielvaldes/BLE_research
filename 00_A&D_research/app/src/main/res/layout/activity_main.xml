@@ -6,35 +6,58 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/weightStats"
-        android:layout_width="398dp"
-        android:layout_height="531dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/bleDeviceInfo" />
-
     <Button
         android:id="@+id/clear"
-        android:layout_width="195dp"
-        android:layout_height="88dp"
+        android:layout_width="316dp"
+        android:layout_height="126dp"
         android:text="Clear"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/bleDeviceInfo"
-        android:layout_width="226dp"
-        android:layout_height="67dp"
-        android:layout_marginTop="4dp"
+        android:layout_width="368dp"
+        android:layout_height="61dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="No Devices Connected..."
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints" />
 
     <Button
         android:id="@+id/ScanButton"
-        android:layout_width="215dp"
-        android:layout_height="88dp"
+        android:layout_width="276dp"
+        android:layout_height="126dp"
         android:text="Scan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/weightStats"
+        android:layout_width="368dp"
+        android:layout_height="378dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bleDeviceInfo" />
+
+    <ImageView
+        android:id="@+id/connectedImage"
+        android:layout_width="16dp"
+        android:layout_height="14dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="2dp"
+        android:alpha=".0"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/bleDeviceInfo"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/active"
+        tools:ignore="MissingConstraints" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

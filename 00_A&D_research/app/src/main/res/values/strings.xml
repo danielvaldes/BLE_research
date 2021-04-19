@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AND_MedicalPrototyping</string>
+    <string name="app_name">AND_Medical</string>
     <string name="ble_not_supported">BLE "NOT" supported</string>
     <string name="ble_supported">BLE supported</string>
 </resources>

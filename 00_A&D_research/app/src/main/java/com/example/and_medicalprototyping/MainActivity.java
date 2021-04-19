@@ -19,15 +19,20 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Checkable;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -46,25 +51,24 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final int SELECT_DEVICE_REQUEST_CODE = 0;
+    private int REQUEST_ENABLE_BLUETOOTH = 1;
 
     //Variables
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothManager mBluetoothManager;
     private BluetoothGatt mBluetoothGatt;
-    private int REQUEST_ENABLE_BLUETOOTH = 1;
     private BluetoothDevice mDevice;
     private String currentConnectedDeviceMac ="";
 
     //Helps with finding BLE devices
     private CompanionDeviceManager deviceManager;
 
-
     // UI
     private TextView textViewWeight, textDeviceInfo;
-    private int myRssi;
-    private Boolean metric; //Lb/Kg
-    private ArrayList<Double> WeightValuesList = new ArrayList<Double>();
-    private ArrayList<WeightEntry> WeightEntryList = new ArrayList<WeightEntry>();
+    private int deviceRssi;
+    private String deviceMetric; //Lb/Kg
+    private ArrayList<WeightEntry> WeightValuesList = new ArrayList<WeightEntry>();
+    private ImageView connectedImage;
 
 
     @Override
@@ -77,20 +81,26 @@ public class MainActivity extends AppCompatActivity {
         textDeviceInfo = (TextView) findViewById(R.id.bleDeviceInfo);
         Button clearButton = (Button) findViewById(R.id.clear);
         Button scanButton = (Button) findViewById(R.id.ScanButton);
+        connectedImage = (ImageView) findViewById(R.id.connectedImage);
 
-
+        clearButton.setVisibility(View.INVISIBLE);
 
 
         clearButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.d("monosaicol","User has clicked on the CLEAR button  ");
                 clear();
+                scanButton.setVisibility(View.VISIBLE);
+                clearButton.setVisibility(View.INVISIBLE);
             }
+
         });
         scanButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.d("monosaicol","User has clicked on the scanButton   ");
                 scan();
+                scanButton.setVisibility(View.INVISIBLE);
+                clearButton.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -108,13 +118,15 @@ public class MainActivity extends AppCompatActivity {
             if (deviceToPair != null) {
                 deviceToPair.createBond();
                 Log.d("monosaicol", "Attempting Connection with:   " + deviceToPair.getName() + "  " + deviceToPair.getAddress());
-
+                textDeviceInfo.setText("PAIRING... \n" + deviceToPair.getName() + "\n" + deviceToPair.getAddress() );
                 currentConnectedDeviceMac = deviceToPair.getAddress();
                 if(!currentConnectedDeviceMac.equals("")) {
                     mDevice = mBluetoothAdapter.getRemoteDevice(currentConnectedDeviceMac);
                     if (mDevice != null) {
                         mDevice.connectGatt(MainActivity.this, true, bluetoothGattCallback);
                         mBluetoothAdapter.getBluetoothLeAdvertiser();
+                        connectedImage.setAlpha((float)1.0);
+                        connectedImage.setColorFilter(Color.argb(255, 125, 125, 125));
                     }
                 }
             }
@@ -131,24 +143,38 @@ public class MainActivity extends AppCompatActivity {
             Log.d("monosaicol", "onConnectionStateChange()   " + device.getAddress() + ", " + device.getName() + ", status=" + status + " newState=" + newState);
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.d("monosaicol", "GATT connection not successful");
+                connectedImage.setColorFilter(Color.argb(255, 125, 125, 125));
+
 
             } else {
                 Log.d("monosaicol", "GATT connection  successful!!!");
+                connectedImage.setColorFilter(Color.argb(255, 0, 255, 0));
+                textDeviceInfo.setText("PAIRED: \n" +  device.getName() + "\n" + currentConnectedDeviceMac);
+
                 gatt.discoverServices();
-                textDeviceInfo.setText("We are PAIRED to: " + currentConnectedDeviceMac + "\n" + device.getName());
+
             }
         }
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             Log.d("monosaicol", "onServicesDiscovered()  " + status);
 
-            if(mBluetoothGatt == null && status == 0) {
-                mBluetoothGatt = gatt;
+            if(status == 0) {
+                if (mBluetoothGatt == null)
+                    mBluetoothGatt = gatt;
+
+                //Allows to  all services / characteristics and descriptors (for Debugging)
+                //listCharacteristics(mBluetoothGatt);
+
+
                 mBluetoothGatt.readRemoteRssi();
-                //read Metric
-                Log.d("monosaicol","!!!!!!!!!!!!!!!!!!!!!!!!!  " + mBluetoothGatt.readCharacteristic(mBluetoothGatt.getService(myWeightScaleMetricService).getCharacteristic(myWeightScaleCharacteristic)) + " " + mBluetoothGatt.getService(myWeightScaleMetricService).getCharacteristic(myWeightScaleMetricCharacteristic).getValue());
-                debuggingCharacteristics(mBluetoothGatt);
-                // mBluetoothGatt.readCharacteristic()
+                readDeviceMetric();
+
+
+
+
+
+
             }
         }
         @Override
@@ -161,21 +187,31 @@ public class MainActivity extends AppCompatActivity {
                 stringBuilder = new StringBuilder(dataInput.length);
                 for(byte byteChar : dataInput)
                     stringBuilder.append(String.format("%02X ", byteChar));
-                Log.d("monosaicol", "DataInput:: properties: " + characteristic.getProperties() + " characteistic length  " + characteristic.getValue().length + "       : " + String.valueOf(stringBuilder));
+                if(characteristic.getUuid().equals(myWeightScaleMetricCharacteristic))
+                {
+                    Log.d("monosaicol", stringBuilder.substring(0)  + stringBuilder.substring(0,2));
+                    if(stringBuilder.substring(0,2).equals("21"))
+                        deviceMetric = "Lb";
+                    else
+                        deviceMetric = "Kg";
+
+
+
+                }
+                Log.d("monosaicol", "DataInput: " + characteristic.getUuid() +": properties: " + characteristic.getProperties() + " characteistic length  " + characteristic.getValue().length + "       :" + String.valueOf(stringBuilder));
+                enableNotify();
             }
         }
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.d("monosaicol", "onCharacteristicWrite()");
+            Log.d("monosaicol", "onCharacteristicWrite()  " + gatt);
         }
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             Log.d("monosaicol", "onCharacteristicChanged()  " + characteristic.getUuid());
 
             textViewWeight.setText("");
-            final byte[] dataInput = characteristic.getValue();
 
-                 Log.d("monosaicol","reading for WS received");
             int flag = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
             String flagString = Integer.toBinaryString(flag);
             int offset=0;
@@ -199,12 +235,14 @@ public class MainActivity extends AppCompatActivity {
 
                     WeightEntry entry = new WeightEntry();
                     entry.setWeight(Math.floor(value * 100) / 100);
-                    entry.setMetric(metric);
-                    entry.setRssi(myRssi);
-                   // entry.setTimeStamp();
 
-                    WeightEntryList.add(entry);
+
+                    entry.setMetric(deviceMetric);
+                    entry.setRssi(deviceRssi);
+
+                    WeightValuesList.add(entry);
                 }
+
 
             }
 
@@ -223,11 +261,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {     BluetoothDevice device = gatt.getDevice();
 
-            myRssi = rssi;
+            deviceRssi = rssi;
             textDeviceInfo.setText((textDeviceInfo.getText() != null ? textDeviceInfo.getText() : "") + "  " + String.valueOf(rssi));
 
-            Log.d("monosaicol", "onReadRemoteRssi()  "  + myRssi);
-            enableNotify();
+            Log.d("monosaicol", "onReadRemoteRssi()  "  + deviceRssi);
+
         }
         @Override
         public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
@@ -286,6 +324,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onDeviceFound(IntentSender chooserLauncher) {
                     try {
                         Log.d("monosaicol","Scanning Devices....");
+
                         startIntentSenderForResult(
                                 chooserLauncher, SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0
                         );
@@ -304,19 +343,22 @@ public class MainActivity extends AppCompatActivity {
     //dettach from BLE device
     public void clear() {
         if(!currentConnectedDeviceMac.equals("")) {
-            Log.d("monosaicol" , "closing: " + String.valueOf(mBluetoothGatt.getDevice().getName()));
-            deviceManager.disassociate(currentConnectedDeviceMac);
+
             currentConnectedDeviceMac = "";
             textDeviceInfo.setText("");
             textViewWeight.setText("");
             WeightValuesList.clear();
+            connectedImage.setAlpha((float)0.0);
 
 
             if (mBluetoothGatt == null) {
                 return;
             }
-            mBluetoothGatt.close();
-            mBluetoothGatt = null;
+                Log.d("monosaicol", "closing: " + String.valueOf(mBluetoothGatt.getDevice().getName()));
+                deviceManager.disassociate(currentConnectedDeviceMac);
+                mBluetoothGatt.close();
+                mBluetoothGatt = null;
+
         }
     }
 
@@ -327,20 +369,27 @@ public class MainActivity extends AppCompatActivity {
             mBluetoothGatt.setCharacteristicNotification(mBluetoothGatt.getService(myWeightScaleService).getCharacteristic(myWeightScaleCharacteristic), true);
             Log.d("monosaicol","we have gone through the process of enabling Weight scale Notifications");
         }
+
     }
 
     private void displayWeights()
     {
-        for (int i = WeightEntryList.size()-1; i >= 0; i--) {
-            Log.d("monosaicol", ((String.valueOf((WeightEntryList.get(i).getWeight()))) + " " + (String.valueOf((WeightEntryList.get(i).getMetric()))) + " " + (String.valueOf((WeightEntryList.get(i).getTimeStamp()))+"\n")));
-            textViewWeight.setText((textViewWeight.getText() != null ? textViewWeight.getText() : "") +  ((String.valueOf((WeightEntryList.get(i).getWeight()))) + " " + (String.valueOf((WeightEntryList.get(i).getMetric()))) + " " + (String.valueOf((WeightEntryList.get(i).getTimeStamp()))+"\n")));
+        for (int i = WeightValuesList.size()-1; i >= 0; i--) {
+            Log.d("monosaicol", ((String.valueOf((WeightValuesList.get(i).getWeight()))) + " " + (String.valueOf((WeightValuesList.get(i).getMetric())))));
+            textViewWeight.setText((textViewWeight.getText() != null ? textViewWeight.getText() : "") +  ((String.valueOf((WeightValuesList.get(i).getWeight()))) + " " + (String.valueOf((WeightValuesList.get(i).getMetric()))) +"\n"));
         }
     }
 
-    private void debuggingCharacteristics(BluetoothGatt gatt){
+    private void readDeviceMetric()
+    {
+        if(mBluetoothGatt !=null)
+            mBluetoothGatt.readCharacteristic(mBluetoothGatt.getService(myWeightScaleMetricService).getCharacteristic(myWeightScaleMetricCharacteristic));
+    }
 
+    private void listCharacteristics(BluetoothGatt gatt){
         Log.d("monosaicol", " readServices.... " + gatt.getServices().size());
         if (mBluetoothGatt != null) {
+
             for (BluetoothGattService service : gatt.getServices()) {
                 if(service != null)
                 {
@@ -348,15 +397,15 @@ public class MainActivity extends AppCompatActivity {
                     for(BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
                         if (characteristic != null) {
                             Log.d("monosaicol", "Characteristic: " + String.valueOf(characteristic.getUuid()));
-
-                           /* if (characteristic.getUuid().equals(myWeightScaleMetricCharacteristic)) {
-                                Log.d("monosaicol", "as;;e;;e;e;e;;e");
-                            }*/
+                            for(BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+                                if(descriptor != null)
+                                {
+                                    Log.d("monosaicol", "Descriptor: " + String.valueOf(descriptor.getUuid()));
+                                }
+                            }
                         }
                     }
                 }
-
-               /* */
             }
         }
     }
